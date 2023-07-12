@@ -1,40 +1,79 @@
 "use client";
-import React, { useState } from "react";
+import React, { FormEvent, useRef } from "react";
 import MessageReceived from "./message/MessageReceived";
 import MessageSended from "./message/MessageSended";
+import { DataMessage, WebSocketProps } from "@/utils/models";
 
-interface props {
-  socket: WebSocket;
-  dataProfile: any;
-}
+export default function SecondPerson({
+  socket,
+  dataProfile,
+  dataMessages,
+}: WebSocketProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
 
-export default function SecondPerson({ socket, dataProfile }: props) {
-  const [messages, setMessages] = useState<string[]>([]);
+  const sendMessage = async (data: object) => {
+    socket.send(JSON.stringify(data));
+  };
 
-  socket.onmessage = (event: MessageEvent<any>) => {
-    const message = event.data;
-    setMessages((prevMessages) => [...prevMessages, message]);
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (inputRef.current) {
+      const message = inputRef.current.value;
+      if (message !== "") {
+        const dataMessage: DataMessage = {
+          code: 2,
+          message,
+        };
+        sendMessage(dataMessage);
+        inputRef.current.value = "";
+      }
+    }
   };
 
   return (
-    <div className="flex flex-col flex-grow max-w-xl w-[362px] bg-white shadow-xl rounded-lg overflow-hidden">
-      <div className="flex flex-col flex-grow h-0 p-4 overflow-auto">
-        <MessageSended profile={dataProfile.firstPersonProfile} text="que haces?" />
-        <MessageReceived profile={dataProfile.secondPersonProfile} text="zzzzzz" />
-        {messages.map((message, index) => (
-          <section key={index}>
-            <MessageReceived profile={dataProfile.secondPersonProfile} text={message} />
-          </section>
-        ))}
+    <form
+      onSubmit={submit}
+      className="flex flex-col flex-grow max-w-xl w-[362px] bg-white shadow-xl rounded-lg overflow-hidden"
+    >
+      <div
+        id="chatContainer2"
+        className="flex flex-col flex-grow h-0 p-4 overflow-auto"
+      >
+        <MessageSended
+          profile={dataProfile.secondPersonProfile}
+          text="que haces?"
+        />
+        <MessageReceived
+          profile={dataProfile.firstPersonProfile}
+          text="zzzzzz"
+        />
+        {dataMessages.map((dataMessage, index) =>
+          dataMessage.code === 2 ? (
+            <section key={index}>
+              <MessageSended
+                profile={dataProfile.secondPersonProfile}
+                text={dataMessage.message}
+              />
+            </section>
+          ) : (
+            <section key={index}>
+              <MessageReceived
+                profile={dataProfile.firstPersonProfile}
+                text={dataMessage.message}
+              />
+            </section>
+          )
+        )}
       </div>
 
       <div className="bg-gray-300 p-4">
         <input
+          ref={inputRef}
           className="flex items-center h-10 w-full rounded px-3 text-sm"
           type="text"
           placeholder="Escribe tu mensaje…"
         />
       </div>
-    </div>
+    </form>
   );
 }

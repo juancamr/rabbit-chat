@@ -11,11 +11,12 @@ const connections: WebSocket[] = [];
 
 //routes
 wss.on("connection", (ws: WebSocket) => {
+  console.log("Conectado");
   connections.push(ws);
   //socket.send() -> ws.on('message') -> socket.onmessage()
-  ws.on("message", async (message: string) => {
+  ws.on("message", async (data: string) => {
     //enviar mensaje y guardarlo en rabbit
-    saveMessage(message);
+    saveMessage(data);
     //obtenerlo de rabbit y devolver el mensaje
     sendMessage(connections);
   });
